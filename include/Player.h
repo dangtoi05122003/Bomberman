@@ -5,6 +5,8 @@
 class Player {
     private:
         int x, y;
+        int dx = 0;
+        int dy = 0;
         int speed = 4;
 
         SDL_Texture* playerSpriteSheet;
@@ -19,4 +21,6 @@ class Player {
 
         int getX(){ return x; }
         int getY(){ return y; }
+        void setX(int value) { x = value; }
+        void setY(int value) { y = value; }
 };

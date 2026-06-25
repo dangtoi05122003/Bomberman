@@ -7,12 +7,14 @@ bool Game::init() {
         "Bomberman",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        800, 600, 0
+        720, 624, 0
     );
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
     isRunning = true;
-
-    player.init(renderer, 100, 100);
+    gameMap = new Map();
+    gameMap->generateRandomMap(13, 15);
+    gameMap->loadTextures(renderer);
+    player.init(renderer, 48, 48);
 
     return true;
 }
@@ -26,7 +28,11 @@ void Game::handleEvents() {
         
         if (e.type == SDL_KEYDOWN) {
             if (e.key.keysym.sym == SDLK_SPACE) {
-                bombs.push_back(Bomb(renderer, player.getX(), player.getY()));
+                int pX = player.getX();
+                int pY = player.getY();
+                int snappedX = (pX + 24) / 48 * 48;
+                int snappedY = (pY + 24) / 48 * 48;
+                bombs.push_back(Bomb(renderer, snappedX, snappedY));
             }
         }
     }
@@ -35,8 +41,34 @@ void Game::handleEvents() {
     player.handleInput(state);
 }
 void Game::update() {
+    int oldX = player.getX();
+    int oldY = player.getY();
     player.update();
-    
+    SDL_Rect playerRect = { player.getX() + 12, player.getY() + 12, 24, 24 };
+    for(auto& b : bombs) {
+        if (!b.isExploded()) {
+            SDL_Rect bombRect = { b.getX(), b.getY(), 48, 48 };
+            bool isOverlapping = SDL_HasIntersection(&playerRect, &bombRect);
+            if (b.isPlayerInside()) {
+                if (!isOverlapping) {
+                    b.setPlayerOutside();
+                }
+            }
+            else {
+                if (isOverlapping) {
+                    player.setX(oldX);
+                    player.setY(oldY);
+                    playerRect = { oldX + 12, oldY + 12, 24, 24 }; 
+                }
+            }
+        }
+    }
+    if (gameMap) {
+        if (gameMap->isWall(playerRect)) {
+            player.setX(oldX);
+            player.setY(oldY);
+        }
+    }
     for (auto it = bombs.begin(); it != bombs.end(); ) {
         it->update();
         if (it->isExploded()) {
@@ -51,8 +83,11 @@ void Game::update() {
 void Game::render() {
     SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
     SDL_RenderClear(renderer);
+    if(gameMap) {
+        gameMap-> render(renderer);
+    }
     for (auto& b : bombs)
-        b.render(renderer);
+        b.render(renderer, gameMap);
         
     player.render(renderer);
     
@@ -60,6 +95,10 @@ void Game::render() {
 }
 
 void Game::clean() {
+    if(gameMap) {
+        delete gameMap;
+        gameMap = nullptr;
+    }
     for (auto& b : bombs) {
         b.clean();
     }

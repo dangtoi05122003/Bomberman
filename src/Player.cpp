@@ -3,6 +3,8 @@
 void Player::init(SDL_Renderer* r, int px, int py) {
     x = px;
     y = py;
+    dx = 0;
+    dy = 0;
     playerSpriteSheet = IMG_LoadTexture(r, "assets/images/player.png");
     if (playerSpriteSheet == nullptr) {
         SDL_Log("Loi khong the nap anh player.png: %s", IMG_GetError());
@@ -11,25 +13,30 @@ void Player::init(SDL_Renderer* r, int px, int py) {
 }
 
 void Player::handleInput(const Uint8* state) {
+    dx = 0;
+    dy = 0;
     if (state[SDL_SCANCODE_W]) {
-        y -= speed;
+        dy -= speed;
         currentDirectionRow = 0;
     }
     if (state[SDL_SCANCODE_S]) {
-        y += speed;
+        dy = speed;
         currentDirectionRow = 2;
     }
     if (state[SDL_SCANCODE_A]) {
-        x -= speed;
+        dx -= speed;
         currentDirectionRow = 1;
     }
     if (state[SDL_SCANCODE_D]) {
-        x += speed;
+        dx = speed;
         currentDirectionRow = 3;
     }
 }
 
-void Player::update() {}
+void Player::update() {
+    x += dx;
+    y += dy;
+}
 
 void Player::render(SDL_Renderer* r) {
     SDL_Rect destRect = { x, y, 48, 48 }; 

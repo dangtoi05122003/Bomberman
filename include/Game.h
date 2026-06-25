@@ -3,13 +3,13 @@
 #include <vector>
 #include "Player.h"
 #include "Bomb.h"
-
+#include "Map.h"
 class Game {
 private:
     bool isRunning;
     SDL_Window* window;
     SDL_Renderer* renderer;
-
+    Map* gameMap;
     Player player;
     std::vector<Bomb> bombs;
 
