@@ -20,4 +20,5 @@ public:
     int getY() { return y; }
     bool isPlayerInside() { return playerInside; }
     void setPlayerOutside() { playerInside = false; }
+    bool isExploding() { return timer <= 0 && explosionFrame < 8; }
 };

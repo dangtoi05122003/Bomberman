@@ -12,7 +12,7 @@ private:
     Map* gameMap;
     Player player;
     std::vector<Bomb> bombs;
-
+    int resetTimer;
 public:
     bool init();
     void handleEvents();

@@ -28,7 +28,11 @@ bool Map::generateRandomMap(int r, int c) {
     cols = c;
     map.resize(rows, vector<char>(cols, '.'));
     srand(static_cast<unsigned int>(time(nullptr)));
-
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            map[i][j] = '.';
+        }
+    }
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             if (i == 0 || i == rows - 1 || j == 0 || j == cols - 1) {
