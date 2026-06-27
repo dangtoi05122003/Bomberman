@@ -16,8 +16,8 @@ public:
     void render(SDL_Renderer* r, Map* gameMap);
     void clean(); 
     bool isExploded() { return timer <= 0 && explosionFrame >= 8; }
-    int getX() { return x; }
-    int getY() { return y; }
+    int getX() const { return x; }
+    int getY() const { return y; }
     bool isPlayerInside() { return playerInside; }
     void setPlayerOutside() { playerInside = false; }
     bool isExploding() { return timer <= 0 && explosionFrame < 8; }

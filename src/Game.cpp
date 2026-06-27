@@ -1,6 +1,11 @@
 #include "Game.h"
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+#include <algorithm>
 
 bool Game::init() {
+    std::srand(std::time(nullptr));
     SDL_Init(SDL_INIT_VIDEO);
 
     window = SDL_CreateWindow(
@@ -16,9 +21,37 @@ bool Game::init() {
     gameMap->loadTextures(renderer);
     player.init(renderer, 48, 48);
     resetTimer = 0;
+    spawnEnemiesRandomly(2);
     return true;
 }
-
+void Game::spawnEnemiesRandomly(int count) {
+    for (auto& e : enemies) {
+        e.clean();
+    }
+    enemies.clear();
+    if (!gameMap) return;
+    std::vector<std::pair<int, int>> emptyTiles;
+    for (int row = 2; row < 12; row++) {
+        for (int col = 2; col < 14; col++) {
+            SDL_Rect tileRect = { col * 48, row * 48, 48, 48 };
+            if (!gameMap->isWall(tileRect)) {
+                if (std::abs(col - 1) > 2 || std::abs(row - 1) > 2) {
+                    emptyTiles.push_back({col, row});
+                }
+            }
+        }
+    }
+    if (!emptyTiles.empty()) {
+        for (int i = 0; i < count && !emptyTiles.empty(); i++) {
+            int randomIndex = std::rand() % emptyTiles.size();
+            auto chosenTile = emptyTiles[randomIndex];
+            Enemy newEnemy;
+            newEnemy.init(renderer, chosenTile.first * 48, chosenTile.second * 48);
+            enemies.push_back(newEnemy);
+            emptyTiles.erase(emptyTiles.begin() + randomIndex);
+        }
+    }
+}
 void Game::handleEvents() {
     SDL_Event e;
 
@@ -72,7 +105,7 @@ void Game::update() {
     }
     for (auto it = bombs.begin(); it != bombs.end(); ) {
         it->update();
-        if (it->isExploding() && player.getIsAlive()) {
+        if (it->isExploding()) {
             int bX = it->getX();
             int bY = it->getY();
             SDL_Rect explosionZones[5] = {
@@ -87,9 +120,17 @@ void Game::update() {
                     if (i > 0 && gameMap->isWall(explosionZones[i])) {
                         continue; 
                     }
-                    if (SDL_HasIntersection(&playerRect, &explosionZones[i])) {
+                    if (player.getIsAlive() && SDL_HasIntersection(&playerRect, &explosionZones[i])) {
                         player.kill();
                         break;
+                    }
+                    for (auto& e : enemies) {
+                        if (e.getIsAlive()) {
+                            SDL_Rect enemyHitbox = { e.getX() + 4, e.getY() + 4, 40, 40 };
+                            if (SDL_HasIntersection(&enemyHitbox, &explosionZones[i])) {
+                                e.kill(); 
+                            }
+                        }
                     }
                 }
             }
@@ -101,7 +142,16 @@ void Game::update() {
             it++;
         }
     }
-    if (!player.getIsAlive()) {
+    for (auto& e : enemies) {
+        e.update(gameMap, player.getX(), player.getY(), bombs);
+        if (e.getIsAlive() && player.getIsAlive()) {
+            SDL_Rect enemyRect = { e.getX() + 6, e.getY() + 6, 36, 36 };
+            if (SDL_HasIntersection(&playerRect, &enemyRect)) {
+                player.kill();
+            }
+        }
+    }
+    if (!player.getIsAlive() || enemies.empty()) {
         resetTimer++;
         if (resetTimer >= 180) { 
             resetTimer = 0;
@@ -109,13 +159,26 @@ void Game::update() {
                 b.clean();
             }
             bombs.clear();
+            for (auto& e : enemies) {
+                e.clean();
+            }
+            enemies.clear();
             if (gameMap) {
                 gameMap->generateRandomMap(13, 15);
             }
             player.init(renderer, 48, 48);
+            spawnEnemiesRandomly(2);
         }
     } else {
         resetTimer = 0;
+    }
+    for (auto it = enemies.begin(); it != enemies.end(); ) {
+        if (it->shouldRemove()) {
+            it->clean();
+            it = enemies.erase(it);
+        } else {
+            it++;
+        }
     }
 }
 
@@ -127,7 +190,9 @@ void Game::render() {
     }
     for (auto& b : bombs)
         b.render(renderer, gameMap);
-        
+    for (auto& e : enemies) {
+        e.render(renderer);
+    }
     player.render(renderer);
     
     SDL_RenderPresent(renderer);

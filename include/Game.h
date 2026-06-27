@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Bomb.h"
 #include "Map.h"
+#include "Enemy.h"
 class Game {
 private:
     bool isRunning;
@@ -12,6 +13,7 @@ private:
     Map* gameMap;
     Player player;
     std::vector<Bomb> bombs;
+    std::vector<Enemy> enemies;
     int resetTimer;
 public:
     bool init();
@@ -19,6 +21,6 @@ public:
     void update();
     void render();
     void clean();
-
+    void spawnEnemiesRandomly(int count);
     bool running() { return isRunning; }
 };
